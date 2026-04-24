@@ -23,7 +23,7 @@ from pyspark.sql.types import DoubleType, DateType, StringType
 
   
 # ─────────────────────────────────────────────────────────
-# FONCTION 1 (Alice) : rename_and_cast
+# FONCTION 1 (Ouattara Honan Solo) : rename_and_cast
 # ─────────────────────────────────────────────────────────
 def rename_and_cast(df: DataFrame) -> DataFrame:
     """
@@ -41,7 +41,7 @@ def rename_and_cast(df: DataFrame) -> DataFrame:
     Returns:
         DataFrame avec colonnes renommées et types corrigés.
     """
-    print("🔄 rename_and_cast : renommage des colonnes...")
+    print("rename_and_cast : renommage des colonnes...")
  
     # withColumnRenamed(ancien_nom, nouveau_nom) renomme une colonne.
     # On peut enchaîner plusieurs appels (méthode fluent / chainable).
