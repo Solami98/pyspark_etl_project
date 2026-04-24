@@ -35,7 +35,7 @@ def load_csv(spark: SparkSession, path: str):
         spark.read
         .option("header", "true")
         .option("inferSchema", "true")
-        .option("encoding", "UTF-8")
+        .option("encoding", "UTF-8-SIG")
         .csv(path)
     )
     print(f"{df.count()} lignes chargées depuis {path}")
