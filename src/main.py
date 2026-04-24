@@ -72,13 +72,13 @@ def main():
  
     # ── TRANSFORM ──────────────────────────────────────────
     print("\n" + "─"*40)
-    print(" ÉTAPE 1/3 — Renommage & Cast (Alice)")
+    print(" ÉTAPE 1/3 — Renommage & Cast (Ouattara Solo)")
     print("─"*40)
     df_renomme = rename_and_cast(df_brut)
     df_renomme.show(truncate=False)
  
     print("\n" + "─"*40)
-    print(" ÉTAPE 2/3 — Nettoyage des nulls (Bob)")
+    print(" ÉTAPE 2/3 — Nettoyage des nulls (Konaté Moussa)")
     print("─"*40)
     # Après rename_and_cast, les colonnes s'appellent désormais
     # 'region_vente', 'nom_produit', 'montant_vente'.
@@ -91,7 +91,7 @@ def main():
     df_propre.show(truncate=False)
  
     print("\n" + "─"*40)
-    print(" ÉTAPE 3/3 — Agrégation (Charlie)")
+    print(" ÉTAPE 3/3 — Agrégation (Esdras Kouassi)")
     print("─"*40)
     # On adapte l'agrégation aux nouveaux noms de colonnes
     from pyspark.sql import functions as F
