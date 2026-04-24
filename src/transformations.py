@@ -1,3 +1,10 @@
+# VERSION D'ALICE (dans feature/rename-columns) :
+# =============================================================
+# transformations.py — Pipeline ETL Ventes v1.0
+# Auteurs : Ouattara Solo, Esdras Kouassi, Konaté Moussa | Équipe Data Engineering
+# =============================================================
+
+
 # =============================================================
 # transformations.py — Bibliothèque de transformations PySpark
 # =============================================================
