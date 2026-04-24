@@ -30,12 +30,13 @@ def create_spark_session(app_name: str = "Pipeline_ETL_Ventes") -> SparkSession:
  
  
 def load_csv(spark: SparkSession, path: str):
-    """Charge un CSV dans un DataFrame Spark (voir Jour 1)."""
     df = (
         spark.read
         .option("header", "true")
         .option("inferSchema", "true")
-        .option("encoding", "UTF-8-SIG")
+        .option("encoding", "utf-8")
+        .option("multiLine", True)
+        .option("escape", "\"")
         .csv(path)
     )
     print(f"{df.count()} lignes chargées depuis {path}")
