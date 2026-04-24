@@ -46,7 +46,7 @@ def load_csv(spark: SparkSession, path: str):
 def main():
     """
     Orchestration complète du pipeline ETL.
- 
+
     Un pipeline ETL (Extract, Transform, Load) suit toujours
     le même schéma :
     - Extract : charger les données brutes depuis la source
