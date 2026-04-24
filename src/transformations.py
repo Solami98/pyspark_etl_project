@@ -1,6 +1,8 @@
 # ─────────────────────────────────────────────────────────
-# FONCTION 3 (Charlie) : aggregate_sales
+# FONCTION 3 (Esdras Kouassi) : aggregate_sales
 # ─────────────────────────────────────────────────────────
+from pyspark.sql import DataFrame
+
 def aggregate_sales(df: DataFrame) -> DataFrame:
     """
     Calcule des statistiques agrégées des ventes par région.
@@ -95,7 +97,7 @@ def clean_nulls(df: DataFrame) -> DataFrame:
     Returns:
         DataFrame sans lignes nulles sur les colonnes critiques.
     """
-    print("🧹 clean_nulls : nettoyage des valeurs manquantes...")
+    print(" clean_nulls : nettoyage des valeurs manquantes...")
  
     # Compter les lignes avant le nettoyage pour le reporting
     count_avant = df.count()

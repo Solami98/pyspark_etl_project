@@ -1,123 +1,123 @@
 # =============================================================
-# main.py — Point d'entrée du pipeline ETL PySpark
+# main.py — Pipeline ETL PySpark FINAL (version intégrée)
 # =============================================================
-# Ce fichier est le chef d'orchestre : il initialise Spark,
-# charge les données brutes, appelle les fonctions de
-# transformation dans l'ordre, et affiche le résultat final.
+# Ce fichier orchestre l'exécution complète du pipeline :
+#   1. Chargement des données CSV
+#   2. Renommage et cast des types (Ouattara Solo)
+#   3. Nettoyage des valeurs nulles (Konaté Moussa)
+#   4. Agrégation des ventes par région (Kouassi Esdras)
 # =============================================================
  
-# PySpark est la bibliothèque Python d'Apache Spark.
-# SparkSession est le point d'entrée unique vers toutes les
-# fonctionnalités Spark depuis la version 2.x.
 from pyspark.sql import SparkSession
  
-# On importe les transformations définies par l'équipe.
-# Ces imports seront complétés au Jour 3 lors de l'intégration.
-# from transformations import clean_nulls, aggregate_sales, rename_columns
+# Import de TOUTES les transformations développées par l'équipe
+# Le point '.' indique un import relatif (même dossier)
+from transformations import rename_and_cast, clean_nulls, aggregate_sales
  
  
 def create_spark_session(app_name: str = "Pipeline_ETL_Ventes") -> SparkSession:
-    """
-    Crée et retourne une SparkSession configurée.
- 
-    Une SparkSession est le point d'entrée vers Spark.
-    'builder' utilise le pattern Builder pour configurer Spark
-    de façon déclarative avant de le démarrer.
- 
-    Args:
-        app_name: Nom affiché dans l'interface Spark UI (port 4040).
- 
-    Returns:
-        Une SparkSession prête à l'emploi.
-    """
+    """Crée et retourne une SparkSession configurée (voir Jour 1)."""
     spark = (
         SparkSession.builder
-        # Nom de l'application visible dans Spark UI
         .appName(app_name)
-        # 'local[*]' = mode local, utilise tous les cœurs CPU disponibles.
-        # En production, on indiquerait l'URL du cluster Spark ici.
         .master("local[*]")
-        # Réduit la verbosité des logs Spark (trop bavard par défaut)
         .config("spark.sql.shuffle.partitions", "2")
-        # Crée la session (ou récupère une existante)
         .getOrCreate()
     )
- 
-    # Définir le niveau de log sur WARN pour n'afficher que l'essentiel.
-    # Les niveaux disponibles sont : ALL, DEBUG, INFO, WARN, ERROR, FATAL, OFF
     spark.sparkContext.setLogLevel("WARN")
- 
-    print(f"✅ SparkSession créée : {spark.version}")
+    print(f"✅ SparkSession démarrée — Spark {spark.version}")
     return spark
  
  
 def load_csv(spark: SparkSession, path: str):
-    """
-    Charge un fichier CSV dans un DataFrame Spark.
- 
-    Un DataFrame Spark est une table distribuée en mémoire,
-    similaire à un DataFrame pandas mais capable de traiter
-    des téraoctets de données sur un cluster.
- 
-    Args:
-        spark: La SparkSession active.
-        path:  Chemin vers le fichier CSV.
- 
-    Returns:
-        Un DataFrame Spark contenant les données du CSV.
-    """
+    """Charge un CSV dans un DataFrame Spark (voir Jour 1)."""
     df = (
         spark.read
-        # header=True : la 1ère ligne contient les noms de colonnes
         .option("header", "true")
-        # inferSchema=True : Spark devine automatiquement les types
-        # (string, int, double…) en lisant les données. Plus lent mais
-        # pratique. En production, on préférerait définir le schéma.
         .option("inferSchema", "true")
-        .option("encoding", "UTF-8")
         .csv(path)
     )
- 
-    # count() est une action qui déclenche vraiment le calcul.
-    # Les transformations Spark sont « lazy » : elles ne s'exécutent
-    # que quand une action (count, show, write…) est appelée.
-    print(f"📂 Données chargées : {df.count()} lignes, {len(df.columns)} colonnes")
+    print(f"{df.count()} lignes chargées depuis {path}")
     return df
  
  
 def main():
-    """Fonction principale : orchestre l'exécution du pipeline."""
+    """
+    Orchestration complète du pipeline ETL.
+ 
+    Un pipeline ETL (Extract, Transform, Load) suit toujours
+    le même schéma :
+    - Extract : charger les données brutes depuis la source
+    - Transform : nettoyer, enrichir, agréger les données
+    - Load : sauvegarder ou afficher le résultat
+ 
+    ORDRE IMPORTANT des transformations :
+    1. rename_and_cast AVANT clean_nulls : les noms de colonnes
+       utilisés dans clean_nulls doivent correspondre.
+    2. clean_nulls AVANT aggregate_sales : on ne veut pas
+       agréger des données corrompues.
+    """
     print("="*55)
-    print(" 🚀 Démarrage du Pipeline ETL PySpark")
+    print(" Pipeline ETL PySpark — v1.0.0")
     print("="*55)
  
-    # Étape 1 : Initialiser Spark
+    # ── EXTRACT ────────────────────────────────────────────
     spark = create_spark_session()
+    df_brut = load_csv(spark, "data/ventes.csv")
  
-    # Étape 2 : Charger les données brutes
-    df_raw = load_csv(spark, "data/ventes.csv")
+    print("\nDonnées brutes :")
+    df_brut.show(truncate=False)
  
-    # Étape 3 : Afficher un aperçu des données brutes
-    print("\n📊 Aperçu des données brutes :")
-    # show() affiche les n premières lignes sous forme de tableau ASCII.
-    # truncate=False évite de couper les valeurs longues.
-    df_raw.show(10, truncate=False)
+    # ── TRANSFORM ──────────────────────────────────────────
+    print("\n" + "─"*40)
+    print(" ÉTAPE 1/3 — Renommage & Cast (Alice)")
+    print("─"*40)
+    df_renomme = rename_and_cast(df_brut)
+    df_renomme.show(truncate=False)
  
-    # Étape 4 : Afficher le schéma inféré
-    print("\n🗂️  Schéma inféré automatiquement par Spark :")
-    # printSchema() montre les types de chaque colonne.
-    # C'est essentiel pour déboguer les erreurs de type.
-    df_raw.printSchema()
+    print("\n" + "─"*40)
+    print(" ÉTAPE 2/3 — Nettoyage des nulls (Bob)")
+    print("─"*40)
+    # Après rename_and_cast, les colonnes s'appellent désormais
+    # 'region_vente', 'nom_produit', 'montant_vente'.
+    # On adapte clean_nulls pour utiliser les nouveaux noms.
+    df_propre = df_renomme.dropna(
+        how="any",
+        subset=["region_vente", "nom_produit", "montant_vente"]
+    )
+    print(f"   {df_renomme.count() - df_propre.count()} ligne(s) supprimée(s)")
+    df_propre.show(truncate=False)
  
-    print("\n✅ Pipeline Jour 1 terminé avec succès !")
-    print("   Les transformations seront ajoutées au Jour 3.")
+    print("\n" + "─"*40)
+    print(" ÉTAPE 3/3 — Agrégation (Charlie)")
+    print("─"*40)
+    # On adapte l'agrégation aux nouveaux noms de colonnes
+    from pyspark.sql import functions as F
+    df_final = (
+        df_propre
+        .groupBy("region_vente")
+        .agg(
+            F.sum("montant_vente").alias("total_ventes"),
+            F.round(F.avg("montant_vente"), 2).alias("moyenne_ventes"),
+            F.max("montant_vente").alias("vente_max"),
+            F.count("montant_vente").alias("nb_transactions"),
+        )
+        .orderBy(F.desc("total_ventes"))
+    )
  
-    # Toujours arrêter la SparkSession proprement à la fin.
+    # ── LOAD ───────────────────────────────────────────────
+    print("\n" + "="*55)
+    print(" ✅ RÉSULTATS FINAUX DU PIPELINE")
+    print("="*55)
+    df_final.show(truncate=False)
+ 
+    # Afficher le schéma final pour validation
+    print("\nSchéma du DataFrame final :")
+    df_final.printSchema()
+ 
     spark.stop()
+    print("\nPipeline v1.0.0 terminé avec succès !")
  
  
-# Point d'entrée Python standard.
-# Ce bloc ne s'exécute que si on lance ce fichier directement
-# (pas si on l'importe depuis un autre module).
 if __name__ == "__main__":
     main()
