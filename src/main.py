@@ -22,7 +22,6 @@ def create_spark_session(app_name: str = "Pipeline_ETL_Ventes") -> SparkSession:
         .appName(app_name)
         .master("local[*]")
         .config("spark.sql.shuffle.partitions", "2")
-        .option("encoding", "UTF-8")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
@@ -36,6 +35,7 @@ def load_csv(spark: SparkSession, path: str):
         spark.read
         .option("header", "true")
         .option("inferSchema", "true")
+        .option("encoding", "UTF-8")
         .csv(path)
     )
     print(f"{df.count()} lignes chargées depuis {path}")
