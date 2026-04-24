@@ -74,6 +74,7 @@ def load_csv(spark: SparkSession, path: str):
         # (string, int, double…) en lisant les données. Plus lent mais
         # pratique. En production, on préférerait définir le schéma.
         .option("inferSchema", "true")
+        .option("encoding", "UTF-8")
         .csv(path)
     )
  
