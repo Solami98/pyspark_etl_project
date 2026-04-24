@@ -1,3 +1,10 @@
+# VERSION DE Konate (dans feature/clean-nulls) :
+# =============================================================
+# transformations.py — Module de nettoyage et transformation
+# Version : 1.0.0 | Date : 2026-04-25
+# =============================================================
+
+
 # (konatemoussa123 repart du même header que celui d'Alice,
 #  qui était sur develop au moment du branching.)
  
