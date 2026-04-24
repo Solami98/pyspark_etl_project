@@ -1,0 +1,27 @@
+# ─── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.Python
+env/
+venv/
+.venv/
+ 
+# ─── Apache Spark ──────────────────────────────────────
+spark-warehouse/
+derby.log
+metastore_db/
+.spark-warehouse/
+ 
+# ─── VS Code ────────────────────────────────────────────
+.vscode/
+ 
+# ─── OS ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+ 
+# ─── Logs & temporaires ─────────────────────────────────
+*.log
+*.tmp
+output/
