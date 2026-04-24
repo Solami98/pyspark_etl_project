@@ -22,6 +22,7 @@ def create_spark_session(app_name: str = "Pipeline_ETL_Ventes") -> SparkSession:
         .appName(app_name)
         .master("local[*]")
         .config("spark.sql.shuffle.partitions", "2")
+        .option("encoding", "UTF-8")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
