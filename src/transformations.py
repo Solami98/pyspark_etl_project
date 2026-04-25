@@ -1,216 +1,142 @@
-# ─────────────────────────────────────────────────────────
-# FONCTION 3 (Charlie) : aggregate_sales
-# ─────────────────────────────────────────────────────────
-def aggregate_sales(df: DataFrame) -> DataFrame:
-    """
-    Calcule des statistiques agrégées des ventes par région.
- 
-    CONCEPT CLÉ — Le groupBy/agg en Spark :
-    C'est l'équivalent du GROUP BY en SQL.
-    groupBy(colonne) crée des groupes de lignes partageant
-    la même valeur pour cette colonne.
-    agg() calcule ensuite des fonctions d'agrégation sur chaque
-    groupe : somme, moyenne, max, min, count...
- 
-    IMPORTANT : Après groupBy, le DataFrame résultant a
-    UNE LIGNE PAR VALEUR UNIQUE de la colonne groupée.
- 
-    Args:
-        df: DataFrame nettoyé (idéalement après clean_nulls).
- 
-    Returns:
-        DataFrame agrégé : une ligne par région avec les stats.
-    """
-    print("📊 aggregate_sales : agrégation des ventes par région...")
- 
-    df_agrege = (
-        df
-        # groupBy(colonne) : groupe les lignes par valeur unique.
-        # Ici on veut UNE LIGNE RÉSUMÉE par région.
-        .groupBy("region")
- 
-        # agg() accepte plusieurs fonctions d'agrégation à la fois.
-        # Chaque fonction retourne une valeur par groupe.
-        .agg(
-            # Somme totale des ventes pour cette région
-            F.sum("ventes").alias("total_ventes"),
- 
-            # Moyenne des ventes (utile pour détecter les outliers)
-            F.avg("ventes").alias("moyenne_ventes"),
- 
-            # Vente maximum (identifier le meilleur jour)
-            F.max("ventes").alias("vente_max"),
- 
-            # Nombre de transactions dans cette région
-            F.count("ventes").alias("nb_transactions"),
-        )
- 
-        # Trier par total décroissant : la meilleure région en premier.
-        # F.desc() = ordre décroissant (DESC en SQL).
-        # F.asc()  = ordre croissant  (ASC en SQL).
-        .orderBy(F.desc("total_ventes"))
-    )
- 
-    # round() arrondit à 2 décimales pour l'affichage.
-    # withColumn remplace la colonne existante par sa version arrondie.
-    df_agrege = df_agrege.withColumn(
-        "moyenne_ventes",
-        F.round(F.col("moyenne_ventes"), 2)
-    )
- 
-    print("   Résultats de l'agrégation :")
-    df_agrege.show(truncate=False)
-    return df_agrege
-
-# VERSION RÉSOLUE (combinaison des deux) :
 # =============================================================
 # transformations.py — Pipeline ETL Ventes v1.0
-# Auteurs : Ouattara Solo, Esdras Kouassi, Konate Moussa | Équipe Data Engineering
-# Version : 1.0.0 | Date : 2024-01-20
+# Auteurs : Ouattara Solo, Konaté Moussa, Kouassi Esdras
 # =============================================================
 
-# (konatemoussa123 repart du même header que celui d'Alice,
-#  qui était sur develop au moment du branching.)
- 
-# ─────────────────────────────────────────────────────────
-# FONCTION 2 (konatemoussa123) : clean_nulls
-# ─────────────────────────────────────────────────────────
-def clean_nulls(df: DataFrame) -> DataFrame:
-    """
-    Supprime les lignes qui contiennent au moins une valeur
-    nulle dans les colonnes critiques du pipeline.
- 
-    POURQUOI filtrer les nulls ?
-    Les valeurs nulles (None / NaN / NULL) sont piégeuses dans
-    Spark : elles se propagent silencieusement dans les calculs.
-    ex: 1500 + NULL = NULL. Il vaut mieux les détecter tôt.
- 
-    STRATÉGIE CHOISIE : suppression des lignes incomplètes.
-    Alternative possible : imputation (remplacer par la moyenne,
-    la médiane, ou une valeur par défaut).
- 
-    Args:
-        df: DataFrame potentiellement avec des nulls.
- 
-    Returns:
-        DataFrame sans lignes nulles sur les colonnes critiques.
-    """
-    print("🧹 clean_nulls : nettoyage des valeurs manquantes...")
- 
-    # Compter les lignes avant le nettoyage pour le reporting
-    count_avant = df.count()
- 
-    # Colonnes que l'on juge critiques pour notre pipeline.
-    # Si une de ces colonnes est null, la ligne est inutilisable.
-    colonnes_critiques = ["region", "produit", "ventes"]
- 
-    # dropna() supprime les lignes avec des nulls.
-    # subset : on ne vérifie que les colonnes listées.
-    # how='any' : supprime si AU MOINS UNE colonne est nulle.
-    # how='all' aurait supprimé seulement si TOUTES étaient nulles.
-    df_clean = df.dropna(
-        how="any",
-        subset=colonnes_critiques
-    )
- 
-    count_apres = df_clean.count()
-    lignes_supprimees = count_avant - count_apres
- 
-    print(f"   Lignes avant : {count_avant}")
-    print(f"   Lignes après : {count_apres}")
-    print(f"   Lignes supprimées : {lignes_supprimees}")
- 
-    # Bonus : afficher les lignes supprimées pour le débogage.
-    # except() retourne les lignes dans df mais PAS dans df_clean.
-    # C'est l'équivalent d'un LEFT ANTI JOIN en SQL.
-    if lignes_supprimees > 0:
-        print("   ⚠️  Lignes avec nulls supprimées :")
-        df.exceptAll(df_clean).show(truncate=False)
- 
-    return df_clean
-
-# VERSION D'ALICE (dans feature/rename-columns) :
-# =============================================================
-# transformations.py — Pipeline ETL Ventes v1.0
-# Auteurs : Ouattara Solo, Esdras Kouassi, Konaté Moussa | Équipe Data Engineering
-# =============================================================
-
-
-# =============================================================
-# transformations.py — Bibliothèque de transformations PySpark
-# =============================================================
-# Ce fichier centralise toutes les fonctions de transformation
-# de données du pipeline. Chaque fonction prend un DataFrame
-# en entrée et retourne un DataFrame transformé.
-#
-# Convention : les fonctions ne modifient JAMAIS le DataFrame
-# original (immutabilité). Elles retournent toujours un
-# NOUVEAU DataFrame — principe fondamental de Spark.
-# =============================================================
- 
-# DataFrame et fonctions Spark SQL
+# Import du type DataFrame (structure principale en PySpark)
 from pyspark.sql import DataFrame
- 
-# 'functions' contient toutes les fonctions intégrées de Spark :
-# col(), lit(), when(), coalesce(), cast()…
-# Convention courante : importer sous l'alias 'F'
-from pyspark.sql import functions as F
- 
-# Types de données Spark pour le cast explicite
-from pyspark.sql.types import DoubleType, DateType, StringType
 
-  
+# Import des fonctions Spark SQL (sum, avg, col, etc.)
+# Convention : on utilise l'alias F pour simplifier l'écriture
+from pyspark.sql import functions as F
+
+# Import des types de données pour faire des conversions explicites
+from pyspark.sql.types import DoubleType, DateType
+
+
 # ─────────────────────────────────────────────────────────
-# FONCTION 1 (Ouattara Honan Solo) : rename_and_cast
+# FONCTION 1 — rename_and_cast (Ouattara Solo)
 # ─────────────────────────────────────────────────────────
 def rename_and_cast(df: DataFrame) -> DataFrame:
     """
-    Renomme les colonnes pour respecter la convention snake_case
-    et convertit les types de données vers des types appropriés.
- 
-    POURQUOI cette étape est-elle importante ?
-    Quand on charge un CSV avec inferSchema, Spark fait de son
-    mieux pour deviner les types mais se trompe parfois
-    (ex: une date lue comme string). Cette fonction corrige ça.
- 
-    Args:
-        df: DataFrame brut chargé depuis le CSV.
- 
-    Returns:
-        DataFrame avec colonnes renommées et types corrigés.
+    Cette fonction prépare les données brutes pour le pipeline.
+
+    Elle réalise 2 opérations importantes :
+    1. Renommer les colonnes (meilleure lisibilité)
+    2. Convertir les types (éviter erreurs de calcul)
+
+    IMPORTANT :
+    Spark ne modifie jamais le DataFrame original.
+    Chaque transformation retourne un NOUVEAU DataFrame.
     """
-    print("rename_and_cast : renommage des colonnes...")
- 
-    # withColumnRenamed(ancien_nom, nouveau_nom) renomme une colonne.
-    # On peut enchaîner plusieurs appels (méthode fluent / chainable).
-    # Spark ne recalcule rien ici (lazy evaluation) : il note
-    # juste la transformation dans le plan d'exécution.
-    df_renamed = (
+
+    print("rename_and_cast...")
+
+    # ── Étape 1 : renommage des colonnes ───────────────────
+    # withColumnRenamed permet de changer le nom d'une colonne.
+    # On passe d'un nom brut à un nom plus explicite.
+    df = (
         df
-        .withColumnRenamed("region",  "region_vente")
+        .withColumnRenamed("region", "region_vente")
         .withColumnRenamed("produit", "nom_produit")
-        .withColumnRenamed("ventes",  "montant_vente")
-        .withColumnRenamed("date",    "date_vente")
+        .withColumnRenamed("ventes", "montant_vente")
+        .withColumnRenamed("date", "date_vente")
     )
- 
-    # withColumn(nom_colonne, nouvelle_expression) REMPLACE une colonne
-    # existante ou en CRÉE une nouvelle si le nom n'existe pas.
-    #
-    # col("montant_vente") : référence la colonne par son nom
-    # .cast(DoubleType()) : convertit en nombre décimal (Double 64-bit)
-    # Pourquoi Double et pas Integer ? Les ventes peuvent avoir des centimes.
-    df_typed = (
-        df_renamed
-        # Cast du montant en nombre décimal
-        .withColumn("montant_vente",
-                    F.col("montant_vente").cast(DoubleType()))
-        # Cast de la date : from string 'YYYY-MM-DD' vers type DateType
-        # Spark reconnaît automatiquement ce format ISO 8601
-        .withColumn("date_vente",
-                    F.col("date_vente").cast(DateType()))
+
+    # ── Étape 2 : conversion des types ─────────────────────
+    # cast() permet de transformer le type d'une colonne
+    # Exemple : string → double (nombre)
+    df = (
+        df
+        # Conversion du montant en nombre décimal
+        .withColumn("montant_vente", F.col("montant_vente").cast(DoubleType()))
+
+        # Conversion de la date en type Date
+        .withColumn("date_vente", F.col("date_vente").cast(DateType()))
     )
- 
-    print(f"   Colonnes après renommage : {df_typed.columns}")
-    return df_typed
+
+    return df
 
 
+# ─────────────────────────────────────────────────────────
+# FONCTION 2 — clean_nulls (Konaté Moussa)
+# ─────────────────────────────────────────────────────────
+def clean_nulls(df: DataFrame) -> DataFrame:
+    """
+    Cette fonction supprime les lignes contenant des valeurs nulles.
+
+    Pourquoi ?
+    En Spark, les nulls sont dangereux :
+    - Ils peuvent casser les calculs
+    - Exemple : 1000 + NULL = NULL
+
+    Stratégie :
+    On supprime toute ligne qui contient un null
+    dans les colonnes critiques.
+    """
+
+    print("clean_nulls...")
+
+    # Nombre de lignes avant nettoyage
+    count_avant = df.count()
+
+    # Colonnes essentielles pour notre analyse
+    colonnes_critiques = ["region_vente", "nom_produit", "montant_vente"]
+
+    # dropna supprime les lignes contenant des valeurs nulles
+    # subset = on ne regarde que ces colonnes
+    df_clean = df.dropna(subset=colonnes_critiques)
+
+    # Nombre de lignes après nettoyage
+    count_apres = df_clean.count()
+
+    print(f"Lignes supprimées : {count_avant - count_apres}")
+
+    return df_clean
+
+
+# ─────────────────────────────────────────────────────────
+# FONCTION 3 — aggregate_sales (Kouassi Esdras)
+# ─────────────────────────────────────────────────────────
+def aggregate_sales(df: DataFrame) -> DataFrame:
+    """
+    Cette fonction regroupe les données par région
+    et calcule des statistiques.
+
+    Concept clé : groupBy + agg
+
+    - groupBy("colonne") → crée des groupes
+    - agg() → applique des calculs sur chaque groupe
+
+    Résultat :
+    1 ligne par région
+    """
+
+    print("aggregate_sales...")
+
+    df_agrege = (
+        df
+
+        # groupBy : on regroupe les lignes par région
+        .groupBy("region_vente")
+
+        # agg : on applique plusieurs calculs
+        .agg(
+            # Somme totale des ventes
+            F.sum("montant_vente").alias("total_ventes"),
+
+            # Moyenne des ventes
+            F.round(F.avg("montant_vente"), 2).alias("moyenne_ventes"),
+
+            # Vente maximale
+            F.max("montant_vente").alias("vente_max"),
+
+            # Nombre de transactions
+            F.count("montant_vente").alias("nb_transactions"),
+        )
+
+        # Tri décroissant
+        .orderBy(F.desc("total_ventes"))
+    )
+
+    return df_agrege
